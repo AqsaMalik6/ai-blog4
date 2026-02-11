@@ -227,40 +227,40 @@ export default function BlogsPage() {
                                             className="group"
                                         >
                                             <Link href={`/blogs/${blog.id}`} className="block h-full">
-                                                <div className="bg-white/5 border border-white/10 rounded-[20px] p-4 h-full flex flex-col hover:bg-white/[0.08] hover:border-blue-500/30 transition-all duration-500">
-                                                    {/* Featured Image Replacement */}
-                                                    <div className="relative h-40 rounded-[16px] overflow-hidden mb-6 border border-white/5">
+                                                <div className="bg-white/5 border border-white/10 rounded-[16px] p-3 h-full flex flex-col hover:bg-white/[0.08] hover:border-blue-500/30 transition-all duration-500">
+                                                    {/* Featured Image - Smaller */}
+                                                    <div className="relative h-28 rounded-[12px] overflow-hidden mb-3 border border-white/5">
                                                         <img
                                                             src={`https://picsum.photos/seed/blog-${blog.id}/800/600`}
                                                             alt={blog.topic}
                                                             className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
                                                         />
-                                                        <div className="absolute top-6 left-6 px-4 py-2 bg-blue-600 rounded-full">
-                                                            <span className="text-[9px] font-normal uppercase tracking-widest text-white">{category}</span>
+                                                        <div className="absolute top-2 left-2 px-2 py-1 bg-blue-600 rounded-full">
+                                                            <span className="text-[7px] font-normal uppercase tracking-widest text-white">{category}</span>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-6 mb-6">
-                                                        <div className="flex items-center gap-2 text-slate-500 text-[10px] font-normal uppercase tracking-widest">
-                                                            <Clock size={14} className="text-blue-500" /> {formatDate(blog.timestamp)}
+                                                    <div className="flex items-center gap-4 mb-2 text-[8px]">
+                                                        <div className="flex items-center gap-1 text-slate-500 font-normal uppercase tracking-wider">
+                                                            <Clock size={10} className="text-blue-500" /> {formatDate(blog.timestamp)}
                                                         </div>
-                                                        <div className="flex items-center gap-2 text-slate-500 text-[10px] font-normal uppercase tracking-widest">
-                                                            <User size={14} className="text-blue-500" /> Admin
+                                                        <div className="flex items-center gap-1 text-slate-500 font-normal uppercase tracking-wider">
+                                                            <User size={10} className="text-blue-500" /> Admin
                                                         </div>
                                                     </div>
 
-                                                    <h3 className="text-lg font-black text-white mb-3 leading-tight uppercase tracking-tight line-clamp-2 group-hover:text-blue-400 transition-colors">
+                                                    <h3 className="text-sm font-black text-white mb-2 leading-tight uppercase tracking-tight line-clamp-2 group-hover:text-blue-400 transition-colors">
                                                         {blog.topic}
                                                     </h3>
 
-                                                    <p className="text-slate-400 font-normal text-[11px] leading-relaxed line-clamp-3 mb-6 uppercase tracking-tight">
-                                                        {blog.content.substring(0, 150).replace(/[#*]/g, '')}...
+                                                    <p className="text-slate-400 font-normal text-[8px] leading-relaxed line-clamp-2 mb-3 uppercase tracking-tight">
+                                                        {blog.content.substring(0, 100).replace(/[#*]/g, '')}...
                                                     </p>
 
-                                                    <div className="mt-auto pt-8 border-t border-white/5 flex items-center justify-between">
-                                                        <span className="text-[11px] font-normal text-slate-500 group-hover:text-white uppercase tracking-widest transition-colors">Node Insight</span>
-                                                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all">
-                                                            <ArrowRight size={20} />
+                                                    <div className="mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
+                                                        <span className="text-[8px] font-normal text-slate-500 group-hover:text-white uppercase tracking-widest transition-colors">Node Insight</span>
+                                                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all">
+                                                            <ArrowRight size={14} />
                                                         </div>
                                                     </div>
                                                 </div>
