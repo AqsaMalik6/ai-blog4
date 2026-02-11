@@ -12,6 +12,45 @@ import { formatDate, cn } from '@/lib/utils';
 // Mock categories and additional field logic since backend is basic
 const CATEGORIES = ['All', 'AI', 'Technology', 'Innovation', 'Design', 'Marketing'];
 
+// Dummy blogs to show when backend returns none
+const DUMMY_BLOGS: Blog[] = [
+    {
+        id: 101,
+        topic: 'AI: Emergence of Agentic Systems',
+        content: 'An exploration into agentic AI systems — architectures, capabilities, and early use-cases in automation and decision-making.',
+        timestamp: '2026-02-01T09:00:00.000Z'
+    },
+    {
+        id: 102,
+        topic: 'Agentic AI: Building Autonomous Agents',
+        content: 'Practical guide to designing and deploying agentic AI that can plan, act, and learn in the wild.',
+        timestamp: '2026-01-25T10:30:00.000Z'
+    },
+    {
+        id: 103,
+        topic: 'AI in Healthcare: Augmenting Diagnosis',
+        content: 'How AI models assist clinicians with diagnostics, triage, and personalized treatment suggestions.',
+        timestamp: '2026-01-18T14:15:00.000Z'
+    },
+    {
+        id: 104,
+        topic: 'Creative AI: Tools for Artists',
+        content: 'A look at generative models and their role in creative workflows for design and media production.',
+        timestamp: '2026-01-10T08:45:00.000Z'
+    },
+    {
+        id: 105,
+        topic: 'The Future of Agentic AI',
+        content: 'Speculation and researched predictions about agentic systems, governance, and societal impact.',
+        timestamp: '2025-12-30T18:00:00.000Z'
+    },
+    {
+        id: 106,
+        topic: 'Ethics & Safety for Autonomous Agents',
+        content: 'Design patterns and guardrails to make agentic AI safer and aligned with human values.',
+        timestamp: '2025-12-15T12:00:00.000Z'
+    }
+];
 export default function BlogsPage() {
     const [blogs, setBlogs] = useState<Blog[]>([]);
     const [chats, setChats] = useState<Chat[]>([]);
@@ -28,7 +67,8 @@ export default function BlogsPage() {
                     blogApi.getAll(),
                     chatApi.getAll()
                 ]);
-                setBlogs(blogData);
+                // If backend returns no blogs, show curated dummy content
+                setBlogs(blogData && blogData.length > 0 ? blogData : DUMMY_BLOGS);
                 setChats(chatData);
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -191,7 +231,7 @@ export default function BlogsPage() {
                                                     {/* Featured Image Replacement */}
                                                     <div className="relative h-40 rounded-[16px] overflow-hidden mb-6 border border-white/5">
                                                         <img
-                                                            src={`https://images.unsplash.com/photo-${1600000000000 + blog.id % 1000}?auto=format&fit=crop&q=80&w=800`}
+                                                            src={`https://picsum.photos/seed/blog-${blog.id}/800/600`}
                                                             alt={blog.topic}
                                                             className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
                                                         />

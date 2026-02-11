@@ -27,11 +27,22 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
         const fetchData = async () => {
             try {
                 const blogs = await blogApi.getAll();
-                const foundBlog = blogs.find(b => b.id === parseInt(id));
+                // Fallback to dummy data when backend is empty
+                const DUMMY_BLOGS: Blog[] = [
+                    { id: 101, topic: 'AI: Emergence of Agentic Systems', content: 'An exploration into agentic AI systems — architectures, capabilities, and early use-cases in automation and decision-making.', timestamp: '2026-02-01T09:00:00.000Z' },
+                    { id: 102, topic: 'Agentic AI: Building Autonomous Agents', content: 'Practical guide to designing and deploying agentic AI that can plan, act, and learn in the wild.', timestamp: '2026-01-25T10:30:00.000Z' },
+                    { id: 103, topic: 'AI in Healthcare: Augmenting Diagnosis', content: 'How AI models assist clinicians with diagnostics, triage, and personalized treatment suggestions.', timestamp: '2026-01-18T14:15:00.000Z' },
+                    { id: 104, topic: 'Creative AI: Tools for Artists', content: 'A look at generative models and their role in creative workflows for design and media production.', timestamp: '2026-01-10T08:45:00.000Z' },
+                    { id: 105, topic: 'The Future of Agentic AI', content: 'Speculation and researched predictions about agentic systems, governance, and societal impact.', timestamp: '2025-12-30T18:00:00.000Z' },
+                    { id: 106, topic: 'Ethics & Safety for Autonomous Agents', content: 'Design patterns and guardrails to make agentic AI safer and aligned with human values.', timestamp: '2025-12-15T12:00:00.000Z' }
+                ];
+
+                const allBlogs = blogs && blogs.length > 0 ? blogs : DUMMY_BLOGS;
+                const foundBlog = allBlogs.find(b => b.id === parseInt(id));
                 setBlog(foundBlog || null);
 
                 // Set some related blogs (excluding current)
-                setRelatedBlogs(blogs.filter(b => b.id !== parseInt(id)).slice(0, 3));
+                setRelatedBlogs(allBlogs.filter(b => b.id !== parseInt(id)).slice(0, 3));
             } catch (error) {
                 console.error('Error fetching blog:', error);
             } finally {
@@ -78,7 +89,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
         "@context": "https://schema.org",
         "@type": "BlogPosting",
         "headline": blog.topic,
-        "image": `https://images.unsplash.com/photo-${1600000000000 + blog.id % 1000}?auto=format&fit=crop&q=80&w=1200`,
+        "image": `https://picsum.photos/seed/blog-${blog.id}/1200/800`,
         "author": {
             "@type": "Person",
             "name": "Cortex Agent V.2"
@@ -162,7 +173,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
                     className="relative aspect-[21/9] rounded-[64px] overflow-hidden border border-white/10 shadow-3xl"
                 >
                     <img
-                        src={`https://images.unsplash.com/photo-${1600000000000 + blog.id % 1000}?auto=format&fit=crop&q=90&w=2000`}
+                        src={`https://picsum.photos/seed/blog-${blog.id}/2000/900`}
                         alt={blog.topic}
                         className="w-full h-full object-cover"
                     />
@@ -258,7 +269,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
                                 <div className="space-y-8">
                                     <div className="relative aspect-[16/10] rounded-[40px] overflow-hidden border border-white/5">
                                         <img
-                                            src={`https://images.unsplash.com/photo-${1600000000000 + rBlog.id % 1000}?auto=format&fit=crop&q=80&w=600`}
+                                            src={`https://picsum.photos/seed/blog-${rBlog.id}/600/400`}
                                             alt={rBlog.topic}
                                             className="w-full h-full object-cover grayscale-[0.8] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
                                         />
