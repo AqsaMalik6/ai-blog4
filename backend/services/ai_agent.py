@@ -7,6 +7,7 @@ from openai.resources.chat import AsyncChat, AsyncCompletions
 from typing import Any, Mapping, List, Dict
 from backend.services.search_service import WebSearchService
 from backend.services.image_service import ImageService
+import asyncio
 
 load_dotenv(override=True)
 
@@ -70,9 +71,9 @@ class GeminiAgent:
         )
 
         # 2. Define the Model using SDK's Class but with our Client
-        print(f"Initializing GeminiAgent with model: gemini-2.0-flash")
+        print(f"Initializing GeminiAgent with model: gemini-2.5-flash")
         self.model = OpenAIChatCompletionsModel(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             openai_client=self.client
         )
         
@@ -88,11 +89,19 @@ Workflow:
    - Use 'image_tool' with a detailed prompt.
    - Reply with a brief confirmation (e.g., "Generated your image of [description]").
 3. If requesting a BLOG:
-   - Use 'search_tool' for research.
-   - Write a high-quality blog post.
+   - ALWAYS try to use 'search_tool' for research first.
+   - IMPORTANT: If search returns "No search results found", DO NOT apologize or ask for clarification.
+   - Instead, use your own extensive knowledge to write a comprehensive, detailed blog post on the topic.
+   - Write a high-quality, in-depth blog post (minimum 800 words) with proper structure:
+     * Engaging introduction
+     * Multiple detailed sections with subheadings
+     * Real-world examples and insights
+     * Thoughtful conclusion
    - ALWAYS call 'image_tool' at the end to generate one featured image.
-   - Return ONLY the blog content.
+   - Return ONLY the blog content in markdown format.
 4. For general talk, be polite and helpful in the user's language.
+
+CRITICAL: Never refuse to write a blog due to lack of search results. Use your knowledge base.
 """,
             tools=[function_tool(self.search_tool), function_tool(self.image_tool)],
             model=self.model
@@ -124,12 +133,31 @@ Workflow:
         
         # Simple backoff retry loop for the main agent run
         max_retries = 3
+        retry_delays = [5, 10, 20] # Aggressive backoff
+        
         for attempt in range(max_retries):
             try:
                 # 4. Use the REAL Runner (Guaranteed SDK usage)
+                print(f"Running agent for topic: {topic}")
                 result = await Runner.run(self.blog_agent, topic)
                 
                 raw_content = result.final_output
+                print(f"Agent returned content length: {len(raw_content) if raw_content else 0}")
+                print(f"Raw content preview: {raw_content[:200] if raw_content else 'EMPTY'}")
+                
+                # Check if content is empty or None
+                if not raw_content or len(raw_content.strip()) < 10:
+                    print("WARNING: Agent returned empty or very short content")
+                    # If this is the last attempt, return a fallback error
+                    if attempt == max_retries - 1:
+                        return {
+                            "blog_content": f"The AI agent was unable to generate content for '{topic}'. This may be due to model limitations or configuration issues. Please try a different topic or check the backend logs for details.",
+                            "image_url": None
+                        }
+                    # Otherwise retry
+                    print(f"Retrying due to empty content (attempt {attempt + 1}/{max_retries})...")
+                    await asyncio.sleep(2)
+                    continue
 
                 # 5. Polish with Gemini
                 polished_content = await self.polish_with_gemini(raw_content)
@@ -140,10 +168,13 @@ Workflow:
                 }
             except Exception as e:
                 error_str = str(e)
+                import traceback
+                traceback.print_exc() # detailed logging
+                
                 if "429" in error_str and attempt < max_retries - 1:
-                    print(f"Rate limit hit (429). Retrying in {(attempt + 1) * 2} seconds...")
-                    import asyncio
-                    await asyncio.sleep((attempt + 1) * 2)
+                    delay = retry_delays[attempt]
+                    print(f"Rate limit hit (429). Retrying in {delay} seconds...")
+                    await asyncio.sleep(delay)
                     continue
                 
                 print(f"Agent Execution Error: {error_str}")
@@ -171,20 +202,22 @@ Workflow:
         
         # Retry loop for polishing
         max_retries = 3
+        retry_delays = [5, 10, 20]
+        
         for attempt in range(max_retries):
             try:
                 # Use the same client for polishing
                 response = await self.client.chat.completions.create(
-                    model="gemini-2.0-flash", 
+                    model="gemini-2.5-flash", 
                     messages=[{"role": "user", "content": polish_prompt}]
                 )
                 return response.choices[0].message.content.strip()
             except Exception as e:
                 error_str = str(e)
                 if "429" in error_str and attempt < max_retries - 1:
-                    print(f"Polishing rate limit (429). Retrying in {(attempt + 1) * 2} seconds...")
-                    import asyncio
-                    await asyncio.sleep((attempt + 1) * 2)
+                    delay = retry_delays[attempt]
+                    print(f"Polishing rate limit (429). Retrying in {delay} seconds...")
+                    await asyncio.sleep(delay)
                     continue
                 print(f"Polishing Error: {e}")
                 return content # Fallback to raw content if polishing fails

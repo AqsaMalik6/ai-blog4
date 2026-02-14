@@ -137,23 +137,6 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
             <section className="pb-32">
                 <div className="container max-w-4xl mx-auto px-6">
                     <div className="space-y-8">
-                        {/* Featured Image - Smaller */}
-                        {blog && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="relative w-full max-w-lg mx-auto"
-                            >
-                                <div className="aspect-[16/9] rounded-[24px] overflow-hidden border border-white/10 shadow-lg">
-                                    <img
-                                        src={`https://picsum.photos/seed/blog-${blog.id}/800/450`}
-                                        alt={blog.topic}
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
-                            </motion.div>
-                        )}
-
                         {/* Content Box */}
                         <div ref={contentRef} id="blog-content" className="bg-white/5 border border-white/10 rounded-[24px] p-8">
                             <div className="prose prose-invert max-w-none

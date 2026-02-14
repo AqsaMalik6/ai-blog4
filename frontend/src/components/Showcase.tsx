@@ -46,7 +46,7 @@ export default function Showcase() {
             title: 'UI/UX Design',
             category: 'Design',
             icon: Layout,
-            image: 'https://images.unsplash.com/photo-1586717791821-3f44a563dc4c?q=80&w=800&auto=format&fit=crop' // Fixed UI/UX image
+            image: 'https://images.pexels.com/photos/196644/pexels-photo-196644.jpeg?auto=compress&cs=tinysrgb&w=800'
         },
     ];
 

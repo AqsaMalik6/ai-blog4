@@ -106,13 +106,26 @@ async def generate_blog(request: TopicRequest, db: Session = Depends(get_db)):
 
         blog_content = ai_result["blog_content"]
 
-        # Step 6: Save blog to database
-        blog = Blog(
-            user_id=user.id, chat_id=chat.id, topic=request.topic, content=blog_content
-        )
-        db.add(blog)
+        # Step 6: Save blog to database ONLY if it's valid content
+        # Check for error indicators
+        is_valid_blog = True
+        # Filter out errors and short content (less than 500 chars)
+        if "System Error" in blog_content or "Error code:" in blog_content or len(blog_content) < 500:
+             is_valid_blog = False
+             print(f"Skipping Blog Save due to error/short content: {len(blog_content)} chars...")
 
-        # Step 7: Save assistant message
+        blog_id = None
+        if is_valid_blog:
+            blog = Blog(
+                user_id=user.id, chat_id=chat.id, topic=request.topic, content=blog_content
+            )
+            db.add(blog)
+            db.flush() # flush to get ID
+            blog_id = blog.id
+            print(f"Blog saved to DB with ID: {blog.id}")
+            print(f"Blog generated successfully!")
+
+        # Step 7: Save assistant message (Always save this so user sees error)
         assistant_message = Message(
             chat_id=chat.id, 
             role="assistant", 
@@ -122,15 +135,13 @@ async def generate_blog(request: TopicRequest, db: Session = Depends(get_db)):
         db.add(assistant_message)
 
         db.commit()
-        db.refresh(blog)
-
-        print(f"Blog saved to DB with ID: {blog.id}")
-        print(f"Blog generated successfully!")
-
+        if is_valid_blog:
+            db.refresh(blog)
+        
         return {
             "success": True,
             "chat_id": chat.id,
-            "blog_id": blog.id,
+            "blog_id": blog_id,
             "user_message_id": user_message.id,
             "assistant_message_id": assistant_message.id,
             "topic": request.topic,
@@ -210,11 +221,21 @@ async def edit_message(message_id: int, content: str, db: Session = Depends(get_
 
 @router.get("/blogs", response_model=List[BlogResponse])
 async def get_blogs(user_id: int = 1, db: Session = Depends(get_db)):
-    """Get all blogs for a user"""
-    blogs = (
+    """Get all blogs for a user, filtering out errors and short content"""
+    all_blogs = (
         db.query(Blog)
         .filter(Blog.user_id == user_id)
         .order_by(Blog.timestamp.desc())
         .all()
     )
-    return blogs
+    
+    # Filter out bad blogs in python
+    valid_blogs = []
+    for b in all_blogs:
+        content = b.content
+        # Filter: Must not have errors AND must be at least 500 chars long
+        if "System Error" in content or "Error code:" in content or len(content) < 500:
+            continue
+        valid_blogs.append(b)
+        
+    return valid_blogs

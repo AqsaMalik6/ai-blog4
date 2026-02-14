@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api'; // Adjust if needed
+const API_BASE_URL = '/api'; // Use relative path for Next.js rewrites
 
 export const api = axios.create({
     baseURL: API_BASE_URL,
