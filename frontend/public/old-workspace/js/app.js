@@ -133,15 +133,35 @@ async function generateBlog() {
                 chat_id: currentChatId
             })
         });
-        const data = await res.json();
-        console.log("Backend Response:", data);
+
+        const rawText = await res.text();
+        console.log(`Backend Response [${res.status}]:`, rawText);
+
+        if (!res.ok) {
+            throw new Error(`Server Error (${res.status}): ${rawText.substring(0, 100)}...`);
+        }
+
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (jsonErr) {
+            console.error("JSON Parse Error:", jsonErr);
+            throw new Error(`Invalid JSON response: ${rawText.substring(0, 50)}...`);
+        }
+
         removeLoading();
 
         if (data.success) {
             // Update user message ID
             if (userWrapper) userWrapper.dataset.id = data.user_message_id;
 
-            addMessageToUI('assistant', data.content, data.image_url, data.assistant_message_id);
+            if (data.content) {
+                addMessageToUI('assistant', data.content, data.image_url, data.assistant_message_id);
+            } else {
+                console.warn("Backend returned success but no content.");
+                addMessageToUI('assistant', "**System Notice**: The agent completed the task but returned no content. This usually indicates a configuration issue (e.g., Model Not Found).");
+            }
+
             if (!currentChatId) {
                 currentChatId = data.chat_id;
             }
@@ -155,7 +175,8 @@ async function generateBlog() {
         }
     } catch (err) {
         removeLoading();
-        addMessageToUI('assistant', "**Connection Error**: Please check if the server is running.");
+        console.error("Generate Blog Error:", err);
+        addMessageToUI('assistant', `**Connection Error**: ${err.message || "Please check if the server is running."}`);
     } finally {
         input.disabled = false;
         document.getElementById('sendBtn').disabled = false;
@@ -342,7 +363,9 @@ function editMessage(btn) {
 }
 
 function formatMarkdown(text) {
+    if (!text) return '';
     // Basic formatting
+    text = String(text);
     text = text.replace(/^# (.*$)/gm, '<h2>$1</h2>');
     text = text.replace(/^## (.*$)/gm, '<h3>$1</h3>');
     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');

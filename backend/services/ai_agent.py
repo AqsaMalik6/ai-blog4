@@ -70,9 +70,9 @@ class GeminiAgent:
         )
 
         # 2. Define the Model using SDK's Class but with our Client
-        print(f"Initializing GeminiAgent with model: gemini-1.5-flash")
+        print(f"Initializing GeminiAgent with model: gemini-2.0-flash")
         self.model = OpenAIChatCompletionsModel(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             openai_client=self.client
         )
         
@@ -121,31 +121,36 @@ Workflow:
     async def process_topic(self, topic: str) -> Dict[str, Any]:
         global current_image_url
         current_image_url = None # Clear for new request
-        try:
-            # 4. Use the REAL Runner (Guaranteed SDK usage)
-            result = await Runner.run(self.blog_agent, topic)
-            
-            raw_content = result.final_output
+        
+        # Simple backoff retry loop for the main agent run
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # 4. Use the REAL Runner (Guaranteed SDK usage)
+                result = await Runner.run(self.blog_agent, topic)
+                
+                raw_content = result.final_output
 
-            # 5. Polish with Gemini
-            polished_content = await self.polish_with_gemini(raw_content)
+                # 5. Polish with Gemini
+                polished_content = await self.polish_with_gemini(raw_content)
 
-            return {
-                "blog_content": polished_content,
-                "image_url": current_image_url
-            }
-        except Exception as e:
-            print(f"Agent Execution Error: {str(e)}")
-            return {
-                "blog_content": f"System Error: {str(e)}", 
-                "image_url": None
-            }
-        except Exception as e:
-            print(f"Agent Execution Error: {str(e)}")
-            return {
-                "blog_content": f"System Error: {str(e)}", 
-                "image_url": None
-            }
+                return {
+                    "blog_content": polished_content,
+                    "image_url": current_image_url
+                }
+            except Exception as e:
+                error_str = str(e)
+                if "429" in error_str and attempt < max_retries - 1:
+                    print(f"Rate limit hit (429). Retrying in {(attempt + 1) * 2} seconds...")
+                    import asyncio
+                    await asyncio.sleep((attempt + 1) * 2)
+                    continue
+                
+                print(f"Agent Execution Error: {error_str}")
+                return {
+                    "blog_content": f"System Error: {error_str}", 
+                    "image_url": None
+                }
 
     async def polish_with_gemini(self, content: str) -> str:
         """
@@ -155,25 +160,34 @@ Workflow:
         if len(content.split()) < 150:
             return content
 
-        try:
-            polish_prompt = (
-                "You are a professional blog editor. Please polish and refine the following blog post. "
-                "Improve the flow, grammar, and professional tone while keeping the core information intact. "
-                "CRITICAL: Return ONLY the polished blog post as plain text or markdown. "
-                "DO NOT include any introductory sentences, meta-talk, options, or explanations. "
-                "Just the final polished content.\n\n"
-                f"{content}"
-            )
-            
-            # Use the same client for polishing
-            response = await self.client.chat.completions.create(
-                model="gemini-1.5-flash", 
-                messages=[{"role": "user", "content": polish_prompt}]
-            )
-            return response.choices[0].message.content.strip()
-        except Exception as e:
-            print(f"Polishing Error: {e}")
-            return content # Fallback to raw content if polishing fails
+        polish_prompt = (
+            "You are a professional blog editor. Please polish and refine the following blog post. "
+            "Improve the flow, grammar, and professional tone while keeping the core information intact. "
+            "CRITICAL: Return ONLY the polished blog post as plain text or markdown. "
+            "DO NOT include any introductory sentences, meta-talk, options, or explanations. "
+            "Just the final polished content.\n\n"
+            f"{content}"
+        )
+        
+        # Retry loop for polishing
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # Use the same client for polishing
+                response = await self.client.chat.completions.create(
+                    model="gemini-2.0-flash", 
+                    messages=[{"role": "user", "content": polish_prompt}]
+                )
+                return response.choices[0].message.content.strip()
+            except Exception as e:
+                error_str = str(e)
+                if "429" in error_str and attempt < max_retries - 1:
+                    print(f"Polishing rate limit (429). Retrying in {(attempt + 1) * 2} seconds...")
+                    import asyncio
+                    await asyncio.sleep((attempt + 1) * 2)
+                    continue
+                print(f"Polishing Error: {e}")
+                return content # Fallback to raw content if polishing fails
     
     async def _generate_with_fallback(self, prompt: str) -> str:
         result = await Runner.run(self.blog_agent, prompt)

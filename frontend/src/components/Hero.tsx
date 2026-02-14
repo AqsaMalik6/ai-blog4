@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function Hero() {
     return (
-        <section className="relative pt-20 pb-24 overflow-hidden bg-black min-h-[75vh] flex flex-col items-center">
+        <section className="relative pt-40 pb-24 overflow-hidden bg-black min-h-[75vh] flex flex-col items-center">
             {/* Background Atmosphere */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-[#3b82f6]/10 rounded-full blur-[120px] animate-pulse" />
